@@ -218,3 +218,19 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Research data
+datasets/
+*.h5
+*.hdf5
+
+# Model checkpoints
+checkpoints/
+*.pth
+*.pt
+
+# Experiment outputs
+outputs/
+
+# Google Colab
+.drive/
