@@ -1,0 +1,12 @@
+experiment_name: smoke_test
+
+dataset:
+  normalization: max
+
+training:
+  batch_size: 2
+  epochs: 1
+  learning_rate: 0.001
+  loss: bce
+
+seed: 42
