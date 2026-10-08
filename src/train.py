@@ -67,6 +67,56 @@ def load_config(config_path):
         return yaml.safe_load(f)
 
 
+class DiceLoss(nn.Module):
+    def __init__(self, smooth=1e-8):
+        super().__init__()
+        self.smooth = smooth
+
+    def forward(self, logits, target):
+        probabilities = torch.sigmoid(logits)
+
+        probabilities = probabilities.flatten(1)
+        target = target.flatten(1)
+
+        intersection = (probabilities * target).sum(dim=1)
+
+        dice = (
+            2 * intersection + self.smooth
+        ) / (
+            probabilities.sum(dim=1)
+            + target.sum(dim=1)
+            + self.smooth
+        )
+
+        return (1 - dice).mean()
+
+
+class BCEDiceLoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.bce = nn.BCEWithLogitsLoss()
+        self.dice = DiceLoss()
+
+    def forward(self, logits, target):
+        return (
+            self.bce(logits, target)
+            + self.dice(logits, target)
+        )
+        
+def create_loss(loss_name):
+    if loss_name == "bce":
+        return nn.BCEWithLogitsLoss()
+
+    elif loss_name == "dice":
+        return DiceLoss()
+
+    elif loss_name == "bce_dice":
+        return BCEDiceLoss()
+
+    else:
+        raise ValueError(
+            f"Unknown loss: {loss_name}"
+        )
 # ============================================================
 # Dataset
 # ============================================================
@@ -291,7 +341,9 @@ def train(config, dataset_path, split_path, checkpoint_dir):
     # Loss and optimizer
     # --------------------------------------------------------
 
-    criterion = nn.BCEWithLogitsLoss()
+    loss_name = config["training"]["loss"]
+    criterion = create_loss(loss_name)
+    print("Loss:", loss_name)
 
     optimizer = torch.optim.Adam(
         model.parameters(),
